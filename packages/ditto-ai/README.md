@@ -33,6 +33,7 @@ const response = await ditto({
     "@cf/meta/llama-3.1-8b-instruct",
     "@cf/meta/llama-3.1-8b-instruct-fast"
   ],
+  maxRetries: 3, // Optional: retry failed model calls
 });
 
 // response.result → merged string result
@@ -114,6 +115,49 @@ bindings: {
   AI: Ai(),
 }
 ```
+
+## Schema Validation
+
+Validate and type your results with Zod or Effect schemas:
+
+```ts
+import { z } from "zod";
+import { dittoClient, fromZod } from "ditto-ai";
+
+const EmailSchema = fromZod(
+  z.object({
+    subject: z.string(),
+    sentiment: z.enum(["positive", "neutral", "negative"]),
+    actionItems: z.array(z.string())
+  })
+);
+
+const ditto = dittoClient({
+  endpoint: "https://your-worker.workers.dev/llm",
+});
+
+const response = await ditto({
+  prompt: "Extract email details as JSON…",
+  models: ["@cf/meta/llama-3.1-8b-instruct"],
+  schema: EmailSchema,
+});
+
+// response.result is validated and typed
+```
+
+## Retry Logic
+
+Automatic retry with exponential backoff using Effect Schedule:
+
+```ts
+const response = await ditto({
+  prompt: "…",
+  models: ["@cf/meta/llama-3.1-8b-instruct"],
+  maxRetries: 3, // Retry up to 3 times with exponential backoff (100ms, 200ms, 400ms...)
+});
+```
+
+Failed model calls are automatically retried with exponential backoff. Each model call retries independently.
 
 ## Error Handling
 

@@ -16,8 +16,7 @@ export interface DittoRequest<T> {
   temperature?: number;
   maxRetries?: number;
   metadata?: Record<string, unknown>;
-  // Schema is handled server-side only for now
-  // schema?: Schema<T>;
+  schema?: Schema<T>;
 }
 
 export class DittoError extends Error {

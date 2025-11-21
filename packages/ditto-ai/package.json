@@ -1,6 +1,6 @@
 {
   "name": "ditto-ai",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Edge-native LLM orchestration for Cloudflare Workers",
   "type": "module",
   "main": "./dist/index.js",

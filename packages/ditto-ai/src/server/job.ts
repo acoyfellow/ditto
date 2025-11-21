@@ -1,5 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
 import * as Effect from "effect/Effect";
+import * as Schedule from "effect/Schedule";
 import type { DittoJobRequest } from "./index.js";
 import { mergeStrings } from "../merge/string.js";
 import { mergeStructuredResponses, parseModelResponse } from "../merge/structured.js";
@@ -87,11 +88,20 @@ export class DittoJob extends DurableObject<DittoJobEnv> {
             ? `${config.prompt}\n\nPrevious responses:\n${previousOutputs.map((out, i) => `${i + 1}. ${out}`).join('\n')}\n\nBuild on these responses:`
             : config.prompt;
           
+          const modelCall = Effect.tryPromise({
+            try: async () => await self.callModel(model, cooperativePrompt),
+            catch: (error) => new Error(`Model ${model} failed: ${error}`),
+          });
+
           const response = yield* _(
-            Effect.tryPromise({
-              try: async () => await self.callModel(model, cooperativePrompt),
-              catch: (error) => new Error(`Model ${model} failed: ${error}`),
-            })
+            config.maxRetries && config.maxRetries > 0
+              ? Effect.retry(
+                  modelCall,
+                  Schedule.exponential("100 millis").pipe(
+                    Schedule.compose(Schedule.recurs(config.maxRetries))
+                  )
+                )
+              : modelCall
           );
           
           const modelEnd = performance.now();
@@ -102,8 +112,8 @@ export class DittoJob extends DurableObject<DittoJobEnv> {
         // Consensus: Parallel execution
         modelResults = yield* _(
           Effect.all(
-            config.models.map((model) =>
-              Effect.tryPromise({
+            config.models.map((model) => {
+              const modelCall = Effect.tryPromise({
                 try: async () => {
                   const modelStart = performance.now();
                   const response = await self.callModel(model, config.prompt);
@@ -111,8 +121,17 @@ export class DittoJob extends DurableObject<DittoJobEnv> {
                   return { model, response, duration: modelEnd - modelStart };
                 },
                 catch: (error) => new Error(`Model ${model} failed: ${error}`),
-              })
-            ),
+              });
+
+              return config.maxRetries && config.maxRetries > 0
+                ? Effect.retry(
+                    modelCall,
+                    Schedule.exponential("100 millis").pipe(
+                      Schedule.compose(Schedule.recurs(config.maxRetries))
+                    )
+                  )
+                : modelCall;
+            }),
             { concurrency: "unbounded" }
           )
         );
@@ -134,9 +153,28 @@ export class DittoJob extends DurableObject<DittoJobEnv> {
       // Merge
       const mergeStart = performance.now();
       const mergeResult = mergeStructuredResponses(config.strategy ?? "consensus", structured);
-      const merged = mergeResult.summary.trim() || mergeStrings(results);
+      let merged = mergeResult.summary.trim() || mergeStrings(results);
       const mergeEnd = performance.now();
       const mergeTime = mergeEnd - mergeStart;
+
+      // Schema validation
+      if (config.schema) {
+        try {
+          let parsed: unknown = merged;
+          // Try parsing as JSON if it looks like JSON
+          if (typeof merged === "string" && (merged.trim().startsWith("{") || merged.trim().startsWith("["))) {
+            try {
+              parsed = JSON.parse(merged);
+            } catch {
+              // Not JSON, use string as-is
+            }
+          }
+          const validated = config.schema.parse(parsed);
+          merged = typeof validated === "string" ? validated : JSON.stringify(validated);
+        } catch (error: any) {
+          throw new Error(`Schema validation failed: ${error?.message || error}`);
+        }
+      }
 
       const totalTime = performance.now() - startTime;
 

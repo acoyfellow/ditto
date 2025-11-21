@@ -13,8 +13,7 @@ export interface DittoJobRequest {
   temperature?: number;
   maxRetries?: number;
   metadata?: Record<string, unknown>;
-  // Schema support planned for future release
-  // schema?: any;
+  schema?: Schema<unknown>;
 }
 
 export interface DittoTimings {
