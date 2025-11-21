@@ -1,21 +1,21 @@
-/* Ditto custom syntax highlighting theme */
+/* Ditto custom syntax highlighting theme - Cloudflare palette */
 :root {
   --ditto-bg: #0a0a0a;
   --ditto-text: #e0e0e0;
-  --ditto-accent: #f97316;
-  --ditto-accent-faded: rgba(249, 115, 22, 0.15);
+  --ditto-accent: #c1562b; /* Cloudflare orange */
+  --ditto-accent-faded: rgba(243, 128, 32, 0.15);
   --ditto-border: #1f1f1f;
-  --ditto-keyword: #f97316;
-  --ditto-string: #1ed02c;
-  --ditto-number: #fbbf24;
-  --ditto-function: #93c5fd;
-  --ditto-comment: #6b7280;
+  --ditto-keyword: #f38020; /* Cloudflare orange for keywords */
+  --ditto-string: #fb923c; /* Light orange/peach for strings */
+  --ditto-number: #fbbf24; /* Amber/yellow for numbers */
+  --ditto-function: #e0e0e0; /* White/light gray for functions */
+  --ditto-comment: #6b7280; /* Gray for comments */
 }
 
 /* svelte-highlight overrides */
 [data-language] {
-  background-color: var(--ditto-bg) !important;
-  border: 1px solid var(--ditto-border) !important;
+  /* background-color: var(--ditto-bg) !important;
+  border: 1px solid var(--ditto-border) !important; */
 }
 
 [data-language] code {

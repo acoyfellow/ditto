@@ -77,7 +77,7 @@ const result = await ditto({
   let copied = $state<CopyTarget | null>(null);
   let timer: ReturnType<typeof setTimeout> | null = null;
 
-  const demoModels = TEXT_GENERATION_MODELS.slice(0, 12);
+  const demoModels = TEXT_GENERATION_MODELS;
   let prompt = $state("I just typed 123 — what should I do?");
   let selectedModels = $state<TextGenerationModel[]>([
     "@cf/meta/llama-3.1-8b-instruct",
@@ -291,17 +291,21 @@ const result = await ditto({
               class="text-xs uppercase tracking-[0.3em] text-gray-500"
               for="strategy">Strategy</label
             >
-            <select
-              id="strategy"
-              bind:value={strategy}
-              class="rounded-2xl border border-[#1f1f1f] bg-black/60 px-4 py-3 text-sm text-white focus:border-[#f97316] focus:outline-none"
-            >
+            <div class="flex gap-2">
               {#each strategyOptions as option}
-                <option value={option.value} disabled={option.disabled}>
+                <button
+                  type="button"
+                  onclick={() => (strategy = option.value)}
+                  disabled={option.disabled}
+                  class="flex-1 rounded-2xl border px-4 py-3 text-sm font-medium transition focus:outline-none disabled:cursor-not-allowed disabled:opacity-50 {strategy ===
+                  option.value
+                    ? 'border-[#f97316] bg-[#f97316]/10 text-[#f97316]'
+                    : 'border-[#1f1f1f] bg-black/60 text-white hover:border-[#f97316]/50'}"
+                >
                   {option.label}
-                </option>
+                </button>
               {/each}
-            </select>
+            </div>
           </div>
 
           {#if runError}
