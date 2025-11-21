@@ -411,10 +411,21 @@ supportingModels: string[]; // Which models voted for winning intent`} />
             </div>
 
             <div class="rounded-2xl border border-[#1f1f1f] bg-black/40 p-6">
-              <h2 class="mb-4 text-lg font-semibold">Cooperative (Planned)</h2>
-              <p class="text-sm text-gray-300">
-                Models share work via task graph. One model's output feeds into another's input for collaborative problem-solving.
+              <h2 class="mb-4 text-lg font-semibold">Cooperative</h2>
+              <p class="text-sm text-gray-300 mb-3">
+                Models execute sequentially, with each model seeing all previous outputs. Perfect for multi-step workflows where models build on each other's work.
               </p>
+              <div class="overflow-hidden rounded-lg">
+                <Highlight language={typescript} code={`// Model 1 gets: "What is 2+2?"
+// Model 2 gets: "What is 2+2?\n\nPrevious responses:\n1. 4\n\nBuild on these responses:"
+// Model 3 gets: "What is 2+2?\n\nPrevious responses:\n1. 4\n2. The answer is four\n\nBuild on these responses:"
+
+const response = await ditto({
+  prompt: "What is 2+2?",
+  models: ["@cf/meta/llama-3.1-8b-instruct", "@cf/mistral/mistral-7b-instruct"],
+  strategy: "cooperative"
+});`} />
+              </div>
             </div>
           </div>
         </section>
@@ -482,6 +493,30 @@ Content: \${text}\`,
   }
 
   return { action: "allow" };
+}`} />
+              </div>
+            </div>
+
+            <div class="rounded-2xl border border-[#1f1f1f] bg-black/40 p-6">
+              <h2 class="mb-4 text-lg font-semibold">Multi-Step Workflow (Cooperative)</h2>
+              <div class="overflow-hidden rounded-lg">
+                <Highlight language={typescript} code={`async function analyzeDocument(document: string) {
+  // Cooperative: Each model builds on previous outputs
+  const response = await ditto({
+    prompt: \`Analyze this document step by step:\n\n\${document}\`,
+    models: [
+      "@cf/meta/llama-3.1-8b-instruct",  // Step 1: Extract key facts
+      "@cf/mistral/mistral-7b-instruct",   // Step 2: Build on facts, add context
+      "@cf/qwen/qwen-2.5-14b-instruct"     // Step 3: Synthesize final analysis
+    ],
+    strategy: "cooperative"
+  });
+
+  // Each model's output builds on the previous ones
+  console.log("Final analysis:", response.result);
+  console.log("All steps:", response.responses);
+  
+  return response.result;
 }`} />
               </div>
             </div>

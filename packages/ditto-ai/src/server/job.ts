@@ -72,23 +72,51 @@ export class DittoJob extends DurableObject<DittoJobEnv> {
       // Start fanout
       const fanoutStart = performance.now();
 
-      // Store model names with their results
-      const modelResults = yield* _(
-        Effect.all(
-          config.models.map((model) =>
+      let modelResults: Array<{ model: string; response: string; duration: number }>;
+      
+      if (config.strategy === "cooperative") {
+        // Cooperative: Sequential execution, each model sees previous outputs
+        modelResults = [];
+        const previousOutputs: string[] = [];
+        
+        for (const model of config.models) {
+          const modelStart = performance.now();
+          
+          // Build prompt with original + previous outputs
+          const cooperativePrompt = previousOutputs.length > 0
+            ? `${config.prompt}\n\nPrevious responses:\n${previousOutputs.map((out, i) => `${i + 1}. ${out}`).join('\n')}\n\nBuild on these responses:`
+            : config.prompt;
+          
+          const response = yield* _(
             Effect.tryPromise({
-              try: async () => {
-                const modelStart = performance.now();
-                const response = await self.callModel(model, config.prompt);
-                const modelEnd = performance.now();
-                return { model, response, duration: modelEnd - modelStart };
-              },
+              try: async () => await self.callModel(model, cooperativePrompt),
               catch: (error) => new Error(`Model ${model} failed: ${error}`),
             })
-          ),
-          { concurrency: "unbounded" }
-        )
-      );
+          );
+          
+          const modelEnd = performance.now();
+          modelResults.push({ model, response, duration: modelEnd - modelStart });
+          previousOutputs.push(response);
+        }
+      } else {
+        // Consensus: Parallel execution
+        modelResults = yield* _(
+          Effect.all(
+            config.models.map((model) =>
+              Effect.tryPromise({
+                try: async () => {
+                  const modelStart = performance.now();
+                  const response = await self.callModel(model, config.prompt);
+                  const modelEnd = performance.now();
+                  return { model, response, duration: modelEnd - modelStart };
+                },
+                catch: (error) => new Error(`Model ${model} failed: ${error}`),
+              })
+            ),
+            { concurrency: "unbounded" }
+          )
+        );
+      }
 
       const fanoutEnd = performance.now();
       const fanoutTime = fanoutEnd - fanoutStart;

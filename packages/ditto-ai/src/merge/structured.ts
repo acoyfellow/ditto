@@ -133,6 +133,27 @@ function buildConsensusSummary(summaries: string[]): string {
   return orderedSentences.slice(0, 5).join(" ");
 }
 
+function buildCooperativeSummary(responses: StructuredModelResult[]): string {
+  if (responses.length === 0) {
+    return "";
+  }
+  
+  // In cooperative mode, combine all responses sequentially
+  // Each response builds on the previous ones
+  const combinedParts: string[] = [];
+  
+  for (let i = 0; i < responses.length; i++) {
+    const response = responses[i];
+    const part = response.summary.trim();
+    if (part) {
+      combinedParts.push(part);
+    }
+  }
+  
+  // Join with connectors to show progression
+  return combinedParts.join(" ").trim() || responses[0]?.summary || "";
+}
+
 export function mergeStructuredResponses(
   strategy: Strategy,
   responses: StructuredModelResult[]
@@ -148,7 +169,25 @@ export function mergeStructuredResponses(
     };
   }
 
-  // Only consensus strategy implemented for now
+  if (strategy === "cooperative") {
+    // Cooperative: Use the final response's intent, combine all summaries
+    const finalResponse = responses[responses.length - 1];
+    const cooperativeSummary = buildCooperativeSummary(responses);
+    
+    // Average confidence across all responses
+    const avgConfidence = responses.reduce((acc, r) => acc + r.confidence, 0) / responses.length;
+    
+    return {
+      summary: cooperativeSummary || finalResponse.summary,
+      intent: finalResponse.intent,
+      confidence: Number(avgConfidence.toFixed(3)),
+      needsClarification: finalResponse.intent === "clarification",
+      supportingModels: responses.map((r) => r.model),
+      responses,
+    };
+  }
+
+  // Consensus strategy (default)
   const intentScores = new Map<DittoIntent, number>();
 
   for (const response of responses) {

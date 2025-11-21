@@ -92,7 +92,7 @@ const result = await ditto({
   let runError = $state<string | null>(null);
   const strategyOptions = [
     { value: "consensus", label: "Consensus", disabled: false },
-    { value: "cooperative", label: "Cooperative (soon)", disabled: true },
+    { value: "cooperative", label: "Cooperative", disabled: false },
   ] as const;
 
   const formatPercent = (value: number | undefined) =>
@@ -159,11 +159,22 @@ const result = await ditto({
   <title>Ditto · Parallel Models, One Result</title>
 </svelte:head>
 
-<div class="min-h-screen bg-[#050505] text-white">
+<div class="min-h-screen bg-[#050505] text-white relative">
   <BG />
+  <div
+    class="fixed inset-0 pointer-events-none"
+    style="background-image: 
+      linear-gradient(to right, rgba(249, 115, 22, 0.12) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(249, 115, 22, 0.12) 1px, transparent 1px);
+    background-size: 5px 5px;
+    background-position: 0 0;
+    mask-image: radial-gradient(ellipse 150% 150% at 50% 50%, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+    -webkit-mask-image: radial-gradient(ellipse 150% 150% at 50% 50%, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 50%, transparent 100%);
+    z-index: 0;"
+  ></div>
   <Nav />
 
-  <main class="mx-auto max-w-6xl space-y-16 px-4 py-12">
+  <main class="mx-auto max-w-6xl space-y-16 px-4 py-12 relative z-10">
     <section
       class="relative grid gap-10 lg:grid-cols-[1.15fr_0.85fr] rounded-3xl p-8 overflow-hidden"
     >
@@ -247,7 +258,7 @@ const result = await ditto({
               id="prompt"
               bind:value={prompt}
               rows="4"
-              class="mt-2 w-full rounded-2xl border border-[#1f1f1f] bg-black/60 p-4 text-sm text-white placeholder:text-gray-500 focus:border-[#f97316] focus:outline-none"
+              class="mt-2 w-full rounded-2xl border border-[#1f1f1f] bg-black/90 p-4 text-sm text-white placeholder:text-gray-500 focus:border-[#f97316] focus:outline-none"
               placeholder="Ask anything..."
             ></textarea>
           </div>
@@ -493,26 +504,6 @@ const result = await ditto({
             </p>
           </div>
         </div>
-
-        <div
-          class="mt-8 rounded-xl border border-dashed border-[#f97316]/70 bg-[#f97316]/5 px-4 py-4 text-sm"
-        >
-          <p class="font-semibold text-[#f97316]">
-            Worker Loaders (Closed Beta)
-          </p>
-          <p class="mt-2 text-xs text-gray-300">
-            Each model call runs in its own <span class="font-mono">LOADER</span
-            >
-            isolate for true sandboxing.
-            <a
-              href="https://forms.gle/MoeDxE9wNiqdf8ri9"
-              target="_blank"
-              rel="noreferrer"
-              class="text-[#f97316] hover:underline ml-1"
-              >Sign up for beta access</a
-            >.
-          </p>
-        </div>
       </div>
 
       <div class="rounded-2xl border border-[#1f1f1f] bg-black/40 p-8">
@@ -534,14 +525,15 @@ const result = await ditto({
 
         <div class="mt-8 rounded-xl border border-[#1f1f1f] bg-black/50 p-6">
           <h4 class="text-sm uppercase tracking-[0.3em] text-gray-500">
-            Consensus Modes
+            Merge Strategies
           </h4>
           <p class="mt-2 text-lg font-semibold text-white">
             Consensus · Cooperative
           </p>
           <p class="mt-3 text-sm text-gray-400">
-            Start with strict consensus today. Flip to cooperative strategies
-            once you need creative blends.
+            <strong>Consensus:</strong> All models answer in parallel, then
+            merge results. <strong>Cooperative:</strong> Models build sequentially,
+            each seeing previous outputs for multi-step workflows.
           </p>
         </div>
       </div>

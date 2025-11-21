@@ -167,8 +167,8 @@ Client → Worker (/llm) → Durable Object Job
 
 ## Strategies
 
-- `consensus` – all models answer the same prompt; Ditto merges the results.
-- `cooperative` – planned: models will share work via a Durable Object task graph.
+- `consensus` – all models answer the same prompt in parallel; Ditto merges the results with confidence scoring.
+- `cooperative` – models execute sequentially, with each model seeing all previous outputs. Perfect for multi-step workflows where models build on each other's work.
 
 ## License
 
