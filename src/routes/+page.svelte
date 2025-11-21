@@ -8,6 +8,9 @@
   import type { MergedStructuredResult } from "ditto-ai";
   import Card from "$lib/components/Card.svelte";
   import BG from "$lib/components/BG.svelte";
+  import Nav from "$lib/components/Nav.svelte";
+  import Highlight from "svelte-highlight";
+  import typescript from "svelte-highlight/languages/typescript";
 
   const installCommand = "bun add ditto-ai";
   const codeExample = `import { dittoClient } from "ditto-ai";
@@ -155,29 +158,7 @@ const result = await ditto({
 
 <div class="min-h-screen bg-[#050505] text-white">
   <BG />
-  <header class="border-b border-[#1f1f1f]">
-    <div
-      class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 text-xs font-mono uppercase tracking-[0.3em]"
-    >
-      <span class="text-[#f97316]">
-        <img src="/ditto.svg" alt="~/ditto $" class="invert" />
-      </span>
-      <nav class="flex gap-6 tracking-normal text-[0.75rem]">
-        <a
-          class="text-gray-400 transition hover:text-white"
-          href="https://npmjs.com/package/ditto-ai"
-          target="_blank"
-          rel="noreferrer">npm</a
-        >
-        <a
-          class="text-gray-400 transition hover:text-white"
-          href="https://github.com/ditto-run"
-          target="_blank"
-          rel="noreferrer">github</a
-        >
-      </nav>
-    </div>
-  </header>
+  <Nav />
 
   <main class="mx-auto max-w-6xl space-y-16 px-4 py-12">
     <section
@@ -217,7 +198,7 @@ const result = await ditto({
       </div>
 
       <div
-        class="relative z-10 rounded-2xl border border-[#1f1f1f] bg-black/60 shadow-2xl"
+        class="relative z-10 rounded-2xl border border-[#1f1f1f] bg-black/60 shadow-2xl overflow-hidden"
       >
         <div
           class="flex items-center justify-between border-b border-[#1f1f1f] px-5 py-3 text-xs uppercase tracking-[0.4em] text-gray-400"
@@ -230,10 +211,9 @@ const result = await ditto({
             {copied === "snippet" ? "copied" : "copy"}
           </button>
         </div>
-        <pre
-          class="overflow-x-auto p-6 text-sm leading-relaxed text-[#f97316] md:text-base"><code
-            >{codeExample}</code
-          ></pre>
+        <div class="p-6">
+          <Highlight language={typescript} code={codeExample} />
+        </div>
       </div>
     </section>
 
@@ -439,31 +419,43 @@ const result = await ditto({
           Architecture
         </p>
         <h3 class="mt-4 text-3xl font-semibold">
-          Request ➝ Ditto ➝ Consensus ➝ Response
+          Edge-Native Parallel Orchestration
         </h3>
         <p class="mt-4 text-sm text-gray-400">
-          Send a request once. Ditto fans it out to every model, waits for
-          confirmations, and merges everything into a single typed payload.
+          Send a request once. Ditto orchestrates parallel model calls on
+          Cloudflare's edge, waits for all responses, and merges them with
+          consensus.
         </p>
 
-        <div class="mt-8 space-y-4">
-          {#each architectureModels as model}
-            <div
-              class="flex items-center justify-between rounded-xl border border-[#1f1f1f] bg-black/30 px-4 py-3 font-mono text-sm text-gray-300"
-            >
-              <span>{model.label}</span>
-              <span class="text-[#f97316]">{model.meta}</span>
-            </div>
-          {/each}
+        <div class="mt-8 space-y-3">
+          <div class="rounded-lg bg-black/60 p-4 text-sm">
+            <p class="font-semibold text-[#f97316]">Durable Object</p>
+            <p class="mt-1 text-xs text-gray-400">
+              Per-request job orchestrator
+            </p>
+          </div>
+          <div class="rounded-lg bg-black/60 p-4 text-sm">
+            <p class="font-semibold text-[#f97316]">Parallel RPC Calls</p>
+            <p class="mt-1 text-xs text-gray-400">
+              All models invoked simultaneously
+            </p>
+          </div>
+          <div class="rounded-lg bg-black/60 p-4 text-sm">
+            <p class="font-semibold text-[#f97316]">Consensus Merge</p>
+            <p class="mt-1 text-xs text-gray-400">
+              Intent detection + confidence scoring
+            </p>
+          </div>
         </div>
 
         <div
-          class="mt-8 flex flex-wrap items-center gap-3 rounded-xl border border-dashed border-[#f97316]/70 px-4 py-3 text-sm text-gray-300"
+          class="mt-8 rounded-xl border border-dashed border-[#f97316]/70 bg-[#f97316]/5 px-4 py-4 text-sm"
         >
-          <span class="font-semibold text-white">Consensus</span>
-          <span class="text-gray-500"
-            >→ typed JSON validated + retried on failure</span
-          >
+          <p class="font-semibold text-[#f97316]">Production Scale</p>
+          <p class="mt-2 text-xs text-gray-300">
+            Connect a <span class="font-mono">MODEL_RUNNER</span> service binding
+            to Worker Loaders or Containers for unlimited concurrency.
+          </p>
         </div>
       </div>
 
@@ -528,14 +520,12 @@ const result = await ditto({
         </div>
         <div class="mt-8 flex flex-wrap gap-4">
           <a
-            href="https://docs.ditto.run"
-            target="_blank"
-            rel="noreferrer"
+            href="/docs"
             class="rounded-full bg-white px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-black transition hover:bg-gray-100"
             >Read Docs</a
           >
           <a
-            href="https://github.com/ditto-run"
+            href="https://github.com/acoyfellow/ditto"
             target="_blank"
             rel="noreferrer"
             class="rounded-full border border-white px-6 py-2 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-black"

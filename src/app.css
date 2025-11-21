@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "./lib/styles/ditto-highlight-theme.css";
 
 @theme {
   --font-sans: "Google Sans Flex", sans-serif;

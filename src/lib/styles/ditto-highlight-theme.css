@@ -1,0 +1,94 @@
+/* Ditto custom syntax highlighting theme */
+:root {
+  --ditto-bg: #0a0a0a;
+  --ditto-text: #e0e0e0;
+  --ditto-accent: #f97316;
+  --ditto-accent-faded: rgba(249, 115, 22, 0.15);
+  --ditto-border: #1f1f1f;
+  --ditto-keyword: #f97316;
+  --ditto-string: #1ed02c;
+  --ditto-number: #fbbf24;
+  --ditto-function: #93c5fd;
+  --ditto-comment: #6b7280;
+}
+
+/* svelte-highlight overrides */
+[data-language] {
+  background-color: var(--ditto-bg) !important;
+  border: 1px solid var(--ditto-border) !important;
+}
+
+[data-language] code {
+  color: var(--ditto-text) !important;
+  font-family: 'Google Sans Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+  font-size: 0.875rem !important;
+}
+
+/* Keywords: import, const, await, function, async, type, interface, etc */
+[data-language] .hljs-keyword,
+[data-language] .hljs-literal,
+[data-language] .hljs-selector-tag,
+[data-language] .hljs-title,
+[data-language] .hljs-section {
+  color: var(--ditto-accent) !important;
+  font-weight: 600 !important;
+}
+
+/* Strings */
+[data-language] .hljs-string,
+[data-language] .hljs-title.class_,
+[data-language] .hljs-inherited {
+  color: var(--ditto-string) !important;
+}
+
+/* Numbers */
+[data-language] .hljs-number,
+[data-language] .hljs-literal {
+  color: var(--ditto-number) !important;
+}
+
+/* Functions */
+[data-language] .hljs-attr,
+[data-language] .hljs-built_in {
+  color: var(--ditto-function) !important;
+}
+
+/* Comments */
+[data-language] .hljs-comment,
+[data-language] .hljs-quote {
+  color: var(--ditto-comment) !important;
+  font-style: italic !important;
+}
+
+/* Symbols, operators */
+[data-language] .hljs-symbol,
+[data-language] .hljs-operator,
+[data-language] .hljs-punctuation {
+  color: var(--ditto-text) !important;
+}
+
+/* Type annotations */
+[data-language] .hljs-type {
+  color: var(--ditto-function) !important;
+}
+
+/* Attributes */
+[data-language] .hljs-attribute {
+  color: var(--ditto-accent) !important;
+}
+
+/* Variable and function names */
+[data-language] .hljs-name {
+  color: var(--ditto-text) !important;
+}
+
+/* Meta */
+[data-language] .hljs-meta {
+  color: var(--ditto-comment) !important;
+}
+
+/* Selection highlight (optional) */
+[data-language] ::selection {
+  background-color: var(--ditto-accent-faded) !important;
+}
+

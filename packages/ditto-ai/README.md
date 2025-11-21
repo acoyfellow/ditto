@@ -2,10 +2,11 @@
 
 Edge-native LLM orchestration for Cloudflare Workers.
 
-- Run multiple Cloudflare AI models in parallel.
-- Merge their outputs using configurable strategies.
-- Return raw string results (schema validation planned).
-- Powered by Workers, Durable Objects, and Effect.
+- Run multiple Cloudflare AI models in parallel at the edge.
+- Merge their outputs with intelligent consensus.
+- Return merged string + individual responses + structured analysis.
+- Powered by Workers and Durable Objects.
+- **Scales to unlimited concurrency** via Worker Loaders or Containers.
 
 ## Install
 
@@ -24,7 +25,7 @@ const ditto = dittoClient({
   endpoint: "https://your-worker.workers.dev/llm",
 });
 
-const summary = await ditto({
+const response = await ditto({
   prompt: "Summarize this email for CRM logging…",
   strategy: "consensus",
   models: [
@@ -32,7 +33,10 @@ const summary = await ditto({
     "@cf/meta/llama-3.1-8b-instruct-fast"
   ],
 });
-// Returns a string result. Schema validation is planned for a future release.
+
+// response.result → merged string result
+// response.responses → { [modelName]: string }
+// response.structured → { summary, intent, confidence, supportingModels, ... }
 ```
 
 ## Configuration
@@ -80,22 +84,51 @@ Note: If using Alchemy, you may need to add this manually to the generated wrang
 
 ## Error Handling
 
-Ditto throws a single `DittoError` type:
+Ditto throws typed `DittoError`:
 
 ```ts
 import { DittoError } from "ditto-ai";
 
 try {
-  const result = await ditto({ prompt: "...", models: [...] });
+  const response = await ditto({ 
+    prompt: "...", 
+    models: [...] 
+  });
 } catch (error) {
   if (error instanceof DittoError) {
-    console.error(error.type);    // Error type
-    console.error(error.message);  // Error message
-    console.error(error.status);   // HTTP status
-    console.error(error.details);  // Additional details
+    console.error(error.type);      // e.g. "BadRequest", "InternalError"
+    console.error(error.message);   // Human-readable error message
+    console.error(error.status);    // HTTP status code
+    console.error(error.details);   // Additional context
   }
 }
 ```
+
+## Architecture
+
+Ditto orchestrates parallel LLM calls across Cloudflare's edge:
+
+```
+Client → Worker (/llm) → Durable Object Job
+                           ↓
+                    Effect.all({ concurrency: "unbounded" })
+                           ↓
+        ┌─────────────────┬──────────────────┬─────────────────┐
+        ↓                 ↓                  ↓                 ↓
+    Model 1          Model 2            Model 3          Model N
+ (llama-3.1)     (mistral-7b)       (qwen-14b)        (custom)
+    (via AI)         (via AI)          (via AI)      (via Loaders)
+        ↓                 ↓                  ↓                 ↓
+        └─────────────────┴──────────────────┴─────────────────┘
+                           ↓
+                   Consensus Merge
+                           ↓
+                    Response + Metadata
+```
+
+**Concurrency**: Durable Objects handle unlimited parallel model calls within a single request.
+
+**Scale**: For production, connect a `MODEL_RUNNER` service binding pointing to Worker Loaders or Containers. Ditto will automatically use this instead of the AI binding for true horizontal scaling.
 
 ## Strategies
 

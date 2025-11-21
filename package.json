@@ -29,6 +29,7 @@
     "@tailwindcss/vite": "^4.1.17",
     "drizzle-kit": "^0.31.7",
     "svelte": "^5.43.13",
+    "svelte-highlight": "^7.9.0",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
     "vite": "^7.2.4"
