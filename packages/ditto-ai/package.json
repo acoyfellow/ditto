@@ -1,0 +1,56 @@
+{
+  "name": "ditto-ai",
+  "version": "0.0.1",
+  "description": "Edge-native LLM orchestration for Cloudflare Workers",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./server": {
+      "import": "./dist/server/index.js",
+      "types": "./dist/server/index.d.ts"
+    },
+    "./merge/string": {
+      "import": "./dist/merge/string.js",
+      "types": "./dist/merge/string.d.ts"
+    },
+    "./merge/structured": {
+      "import": "./dist/merge/structured.js",
+      "types": "./dist/merge/structured.d.ts"
+    }
+  },
+  "files": [
+    "src",
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "echo \"Tests coming soon\""
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "llm",
+    "ai",
+    "orchestration",
+    "durable-objects"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "effect": "^3.0.0"
+  },
+  "peerDependencies": {
+    "zod": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^22.0.0"
+  }
+}
+

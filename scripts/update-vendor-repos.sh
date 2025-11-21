@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Vendor repo management script (clones repos locally for IDE/agent reference)
-# Usage: ./scripts/update-vendor-repos.sh [effect|svelte|kit|all]
+# Usage: ./scripts/update-vendor-repos.sh [effect|svelte|kit|alchemy|all]
 # Note: Repos are gitignored, not committed to git
 
 set -e
@@ -9,10 +9,12 @@ set -e
 EFFECT_REPO="https://github.com/Effect-TS/effect"
 SVELTE_REPO="https://github.com/sveltejs/svelte"
 KIT_REPO="https://github.com/sveltejs/kit"
+ALCHEMY_REPO="https://github.com/alchemy-run/alchemy"
 
 EFFECT_PREFIX="vendor/effect"
 SVELTE_PREFIX="vendor/svelte"
 KIT_PREFIX="vendor/kit"
+ALCHEMY_PREFIX="vendor/alchemy"
 
 BRANCH="main"
 
@@ -52,14 +54,18 @@ case "${1:-all}" in
   kit)
     update_repo "kit" "$KIT_REPO" "$KIT_PREFIX"
     ;;
+  alchemy)
+    update_repo "alchemy" "$ALCHEMY_REPO" "$ALCHEMY_PREFIX"
+    ;;
   all)
     update_repo "effect" "$EFFECT_REPO" "$EFFECT_PREFIX"
     update_repo "svelte" "$SVELTE_REPO" "$SVELTE_PREFIX"
     update_repo "kit" "$KIT_REPO" "$KIT_PREFIX"
+    update_repo "alchemy" "$ALCHEMY_REPO" "$ALCHEMY_PREFIX"
     echo "All repos updated!"
     ;;
   *)
-    echo "Usage: $0 [effect|svelte|kit|all]"
+    echo "Usage: $0 [effect|svelte|kit|alchemy|all]"
     exit 1
     ;;
 esac
