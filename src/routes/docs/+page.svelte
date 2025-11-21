@@ -240,13 +240,16 @@ console.log(response.structured);    // intent, confidence, etc.`} />
               <h2 class="mb-4 text-lg font-semibold">Worker Configuration</h2>
               <div class="overflow-hidden rounded-lg">
                 <Highlight language={typescript} code={`// worker/index.ts
-import { createDittoWorkerHandler, type DittoJobRequest } from "ditto-ai/server";
-import { DittoJob } from "ditto-ai/server";
+import { DittoJob, createDittoWorkerHandler } from "ditto-ai/server";
+
+// Export DittoJob for Durable Object binding
+export { DittoJob };
 
 type Env = {
   DITTO_JOB: DurableObjectNamespace<DittoJob>;
-  AI: Fetcher;
-  MODEL_RUNNER?: Fetcher;
+  AI: {
+    run: (model: string, input: { prompt: string }) => Promise<{ response?: string }>;
+  };
 };
 
 const dittoHandler = createDittoWorkerHandler({
@@ -270,22 +273,16 @@ export default {
             <div class="rounded-2xl border border-[#1f1f1f] bg-black/40 p-6">
               <h2 class="mb-4 text-lg font-semibold">Wrangler Configuration</h2>
               <div class="overflow-hidden rounded-lg">
-                <Highlight language={bash} code={`# wrangler.toml or wrangler.jsonc
+                <Highlight language={bash} code={`# wrangler.toml
 
-# AI Binding (required)
-[ai]
+# AI binding (REQUIRED)
+[[ai]]
 binding = "AI"
 
-# Durable Object Binding (required)
+# Durable Object binding (REQUIRED)
 [[durable_objects.bindings]]
 name = "DITTO_JOB"
-class_name = "DittoJob"
-
-# Optional: Service Binding for model runner
-[[services]]
-binding = "MODEL_RUNNER"
-service = "model-runner"
-environment = "production"`} />
+class_name = "DittoJob"`} />
               </div>
             </div>
 
@@ -295,19 +292,13 @@ environment = "production"`} />
                 <div>
                   <p class="font-mono text-[#f97316]">env.AI</p>
                   <p class="text-gray-400">
-                    Cloudflare AI binding. Must have <span class="font-mono">.run()</span> method.
+                    <strong>Required.</strong> Cloudflare AI binding. Must have <span class="font-mono">.run(model, { prompt })</span> method.
                   </p>
                 </div>
                 <div>
                   <p class="font-mono text-[#f97316]">env.DITTO_JOB</p>
                   <p class="text-gray-400">
-                    Durable Object namespace for per-request job orchestration.
-                  </p>
-                </div>
-                <div>
-                  <p class="font-mono text-[#f97316]">env.MODEL_RUNNER (optional)</p>
-                  <p class="text-gray-400">
-                    Service Binding for model execution layer (tries this before AI binding).
+                    <strong>Required.</strong> Durable Object namespace for per-request job orchestration. Provides extreme durability and idempotency.
                   </p>
                 </div>
               </div>

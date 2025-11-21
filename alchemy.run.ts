@@ -34,16 +34,6 @@ const DB = await D1Database(`${projectName}-db`, {
   adopt: true,
 });
 
-export const MODEL_WORKER = await Worker(`${projectName}-model-runner`, {
-  name: `${projectName}-model-runner`,
-  entrypoint: "./worker/model-runner.ts",
-  adopt: true,
-  bindings: {
-    AI: Ai(),
-  },
-  url: false,
-});
-
 export const WORKER = await Worker(`${projectName}-worker`, {
   name: `${projectName}-worker`,
   entrypoint: "./worker/index.ts",
@@ -51,7 +41,6 @@ export const WORKER = await Worker(`${projectName}-worker`, {
   bindings: {
     MY_DO,
     DITTO_JOB,
-    MODEL_RUNNER: MODEL_WORKER,
     AI: Ai(),
   },
   url: false

@@ -1,6 +1,6 @@
 import { query, command, getRequestEvent } from '$app/server';
 import { callWorkerJSON } from '$lib/worker-client';
-import type { MergedStructuredResult } from "ditto-ai";
+import type { MergedStructuredResult, DittoTimings } from "ditto-ai";
 
 // Example query function (no auth required)
 // TODO: Replace with your actual query functions
@@ -58,10 +58,10 @@ export const runDitto = query(
     prompt: string;
     models: string[];
     strategy?: "consensus" | "cooperative";
-  }): Promise<{ result: string; responses?: Record<string, string>; structured?: MergedStructuredResult }> => {
+  }): Promise<{ result: string; responses?: Record<string, string>; structured?: MergedStructuredResult; timings?: DittoTimings }> => {
     const platform = getRequestEvent().platform;
 
-    return await callWorkerJSON<{ result: string; responses?: Record<string, string>; structured?: MergedStructuredResult }>(
+    return await callWorkerJSON<{ result: string; responses?: Record<string, string>; structured?: MergedStructuredResult; timings?: DittoTimings }>(
       platform,
       "/llm",
       {

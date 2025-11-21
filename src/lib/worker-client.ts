@@ -9,8 +9,8 @@ async function callWorker(
   options: RequestInit = {}
 ): Promise<Response> {
   if (dev) {
-    // Development: HTTP call to local worker (port 1338 for main worker, 1337 is model-runner)
-    return fetch(`http://localhost:1338${endpoint}`, options);
+    // Development: HTTP call to local worker
+    return fetch(`http://localhost:1337${endpoint}`, options);
   }
 
   // Production: Service binding
@@ -37,6 +37,8 @@ export async function callWorkerJSON<T>(
   try {
     const response = await callWorker(platform, endpoint, options);
 
+    console.log(response);
+
     if (!response.ok) {
       const errorText = await response.text().catch(() => 'Service error');
       let errorMessage = `Service error (${response.status}): ${errorText}`;
@@ -51,6 +53,7 @@ export async function callWorkerJSON<T>(
 
     return response.json() as Promise<T>;
   } catch (error) {
+    console.error(error);
     if (error instanceof TypeError && error.message.includes('fetch')) {
       throw new Error('Service temporarily unavailable. Please try again.');
     }

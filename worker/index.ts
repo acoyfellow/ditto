@@ -1,14 +1,10 @@
-import { DurableObject } from 'cloudflare:workers'
-import * as Effect from "effect/Effect";
-import { createDittoWorkerHandler, type DittoJobRequest } from "ditto-ai/server";
-import { mergeStrings } from "ditto-ai/merge/string";
-import { mergeStructuredResponses, parseModelResponse } from "ditto-ai/merge/structured";
+import { DurableObject } from 'cloudflare:workers';
+import { DittoJob, createDittoWorkerHandler } from "ditto-ai/server";
 
 type Env = {
   MY_DO: DurableObjectNamespace<MyDO>;
   DITTO_JOB: DurableObjectNamespace<DittoJob>;
-  MODEL_RUNNER?: Fetcher;
-  AI?: {
+  AI: {
     run: (model: string, input: { prompt: string }) => Promise<{ response?: string }>;
   };
 };
@@ -66,149 +62,21 @@ export class MyDO extends DurableObject {
   }
 }
 
-// DittoJob for LLM orchestration
-export class DittoJob extends DurableObject<Env> {
-  constructor(ctx: DurableObjectState, env: Env) {
-    super(ctx, env);
-  }
-
-  async fetch(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    console.log(`[DittoJob] Received request: ${request.method} ${url.pathname}`);
-
-    if (request.method === "POST" && url.pathname === "/run") {
-      try {
-        const body = (await request.json()) as DittoJobRequest;
-        const jobResult = await this.runJob(body);
-        return new Response(JSON.stringify({
-          result: jobResult.merged,
-          responses: jobResult.responses,
-          structured: jobResult.structured
-        }), {
-          status: 200,
-          headers: { "Content-Type": "application/json" },
-        });
-      } catch (error: any) {
-        return new Response(
-          JSON.stringify({
-            error: {
-              type: "JobError",
-              message: error?.message || "Job execution failed",
-            },
-          }),
-          {
-            status: 500,
-            headers: { "Content-Type": "application/json" },
-          }
-        );
-      }
-    }
-
-    return new Response("Not found", { status: 404 });
-  }
-
-  private async runJob(
-    config: DittoJobRequest
-  ): Promise<{
-    merged: string;
-    responses: Record<string, string>;
-    structured: ReturnType<typeof mergeStructuredResponses>;
-  }> {
-    const self = this;
-    const jobEffect = Effect.gen(function* (_) {
-      // Store model names with their results
-      const modelResults = yield* _(
-        Effect.all(
-          config.models.map((model) =>
-            Effect.tryPromise({
-              try: async () => {
-                const response = await self.callModel(model, config.prompt);
-                return { model, response };
-              },
-              catch: (error) => new Error(`Model ${model} failed: ${error}`),
-            })
-          ),
-          { concurrency: "unbounded" }
-        )
-      );
-
-      // Build responses map
-      const responses: Record<string, string> = {};
-      const results: string[] = [];
-      const structured = modelResults.map(({ model, response }) => {
-        responses[model] = response;
-        results.push(response);
-        return parseModelResponse(model, response);
-      });
-
-      const mergeResult = mergeStructuredResponses(config.strategy ?? "consensus", structured);
-      const merged = mergeResult.summary.trim() || mergeStrings(results);
-
-      return { merged, responses, structured: mergeResult };
-    });
-
-    return Effect.runPromise(jobEffect);
-  }
-
-  private async callModel(model: string, prompt: string): Promise<string> {
-    const env = this.env as Env;
-
-    // Try MODEL_RUNNER service binding first (production architecture)
-    if (env.MODEL_RUNNER) {
-      try {
-        const requestBody = JSON.stringify({ model, prompt });
-        const request = new Request("http://model-runner/run", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: requestBody,
-        });
-
-        const response = await env.MODEL_RUNNER.fetch(request);
-
-        if (response.ok) {
-          const data = (await response.json()) as { result?: string };
-          if (data?.result) {
-            return data.result;
-          }
-        } else {
-          const errorText = await response.text();
-          console.warn(`[ditto] MODEL_RUNNER failed (${response.status}): ${errorText}`);
-        }
-      } catch (error) {
-        console.warn(`[ditto] MODEL_RUNNER error:`, error);
-        // Fall through to direct AI binding
-      }
-    }
-
-    // Fallback to direct AI binding
-    if (!env.AI) {
-      throw new Error("AI binding is not available");
-    }
-
-    const response = await env.AI.run(model, { prompt });
-    if (!response || !response.response) {
-      throw new Error(`Invalid response from model ${model}`);
-    }
-
-    return response.response as string;
-  }
-}
+// Export DittoJob from package
+export { DittoJob };
 
 const dittoHandler = createDittoWorkerHandler();
 
 // Worker entry point - routes requests to your Durable Objects
 export default {
-  async fetch(request: Request, env: Env) {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
     try {
       const url = new URL(request.url);
       const pathname = url.pathname;
 
       // Route /llm to Ditto handler
       if (pathname === "/llm") {
-        return dittoHandler.fetch(request, env, {
-          waitUntil: () => { },
-          passThroughOnException: () => { },
-        } as unknown as ExecutionContext);
+        return dittoHandler.fetch(request, env, ctx);
       }
 
       // Route /api/storage/{key} to MyDO (original remote template behavior)

@@ -2,6 +2,8 @@
 
 Edge-native parallel LLM orchestration on Cloudflare Workers. Run multiple AI models in parallel, merge their outputs with consensus, and get back typed results.
 
+Built on Cloudflare Durable Objects for extreme durability and idempotency. Each job orchestrates parallel model calls using Effect for true concurrency at the edge.
+
 This repository contains:
 - `packages/ditto-ai/` - npm package for LLM orchestration
 - `src/` - SvelteKit demo & docs deployed to `ditto.coey.dev`
@@ -39,11 +41,12 @@ console.log(response.structured);  // intent, confidence, supporting models
 
 ## Features
 
-- **Parallel execution** – all models run simultaneously on Cloudflare edge
-- **Unlimited concurrency** – Durable Object orchestration with unbounded parallelism
-- **Production scaling** – optional Worker Loaders/Containers via `MODEL_RUNNER` binding
+- **Parallel RPC orchestration** – Effect.all with unbounded concurrency for true parallelism
+- **Durable Object orchestration** – per-job state management with idempotency
+- **Unlimited concurrency** – scale to 100+ concurrent models per request
 - **Consensus merging** – intelligent combination with confidence scoring
 - **Structured analysis** – intent classification, hallucination detection
+- **Performance timings** – track total, fanout, slowest model, and merge time
 - **Type safety** – full TypeScript support
 - **Individual responses** – inspect each model's output
 - **Error handling** – typed `DittoError` with HTTP status codes

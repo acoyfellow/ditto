@@ -1,5 +1,6 @@
 import type { Strategy } from "../client/index.js";
 import type { Schema } from "../schema.js";
+export { DittoJob, type DittoJobEnv, type DittoJobResult } from "./job.js";
 
 export interface DittoWorkerOptions {
   defaultStrategy?: Strategy;
@@ -16,10 +17,18 @@ export interface DittoJobRequest {
   // schema?: any;
 }
 
+export interface DittoTimings {
+  total: number;
+  fanout: number;
+  slowest: number;
+  merge: number;
+}
+
 export interface DittoResponse<T> {
   result?: T;
   responses?: Record<string, string>; // Individual model responses: model name -> response
   structured?: unknown;
+  timings?: DittoTimings;
   error?: {
     type: string;
     message: string;
@@ -45,7 +54,7 @@ async function runDittoJob(
   body: DittoJobRequest,
   env: any,
   ctx: ExecutionContext
-): Promise<{ result: unknown; responses?: Record<string, string>; structured?: unknown }> {
+): Promise<{ result: unknown; responses?: Record<string, string>; structured?: unknown; timings?: DittoTimings }> {
   const jobId = crypto.randomUUID();
   const doStub = env.DITTO_JOB.getByName(jobId);
 
@@ -69,7 +78,7 @@ async function runDittoJob(
   }
 
   const data = await response.json();
-  return { result: data.result, responses: data.responses, structured: data.structured };
+  return { result: data.result, responses: data.responses, structured: data.structured, timings: data.timings };
 }
 
 export function createDittoWorkerHandler(opts: DittoWorkerOptions = {}) {
@@ -99,7 +108,8 @@ export function createDittoWorkerHandler(opts: DittoWorkerOptions = {}) {
         const payload: DittoResponse<unknown> = {
           result: jobResult.result,
           responses: jobResult.responses,
-          structured: jobResult.structured
+          structured: jobResult.structured,
+          timings: jobResult.timings
         };
         return new Response(JSON.stringify(payload), {
           status: 200,

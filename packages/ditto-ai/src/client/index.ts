@@ -32,10 +32,18 @@ export class DittoError extends Error {
   }
 }
 
+export interface DittoTimings {
+  total: number;    // ms start to finish
+  fanout: number;   // ms to start all models
+  slowest: number;  // ms of slowest model
+  merge: number;    // ms merge time
+}
+
 export interface DittoClientResponse<T> {
   result: T;
   responses?: Record<string, string>; // Individual model responses: model name -> response
   structured?: MergedStructuredResult;
+  timings?: DittoTimings;
 }
 
 export function dittoClient(options: DittoClientOptions) {
@@ -62,8 +70,8 @@ export function dittoClient(options: DittoClientOptions) {
       );
     }
 
-    const data = await res.json() as { result: T; responses?: Record<string, string>; structured?: MergedStructuredResult };
-    return { result: data.result, responses: data.responses, structured: data.structured };
+    const data = await res.json() as { result: T; responses?: Record<string, string>; structured?: MergedStructuredResult; timings?: DittoTimings };
+    return { result: data.result, responses: data.responses, structured: data.structured, timings: data.timings };
   };
 }
 

@@ -3,10 +3,11 @@
 Edge-native LLM orchestration for Cloudflare Workers.
 
 - Run multiple Cloudflare AI models in parallel at the edge.
+- Durable Object orchestration for extreme durability and idempotency.
+- Effect.all with unbounded concurrency for true parallelism.
 - Merge their outputs with intelligent consensus.
-- Return merged string + individual responses + structured analysis.
-- Powered by Workers and Durable Objects.
-- **Scales to unlimited concurrency** via Worker Loaders or Containers.
+- Return merged string + individual responses + structured analysis + timings.
+- **Unlimited concurrency** – scale to 100+ concurrent models per request.
 
 ## Install
 
@@ -41,12 +42,15 @@ const response = await ditto({
 
 ## Configuration
 
-Ditto expects to be used from a Cloudflare Worker that has the Cloudflare AI binding configured (e.g. `env.AI`).
+Ditto requires a Cloudflare Worker with the following bindings:
 
 ### Worker Setup
 
 ```ts
-import { createDittoWorkerHandler } from "ditto-ai/server";
+import { DittoJob, createDittoWorkerHandler } from "ditto-ai/server";
+
+// Export DittoJob for Durable Object binding
+export { DittoJob };
 
 const handler = createDittoWorkerHandler();
 
@@ -58,17 +62,24 @@ export default {
 ```
 
 Your Worker must have:
-- `env.AI` - Cloudflare AI binding
-- `env.DITTO_JOB` - Durable Object namespace for `DittoJob`
+- `env.AI` - Cloudflare AI binding (required)
+- `env.DITTO_JOB` - Durable Object namespace for `DittoJob` (required)
 
-### Environment Variables
+### Wrangler Configuration
 
-No environment variables are required in userland. The Cloudflare AI binding must be configured in your `wrangler.toml` or `wrangler.jsonc`:
+Configure bindings in your `wrangler.toml` or `wrangler.jsonc`:
 
 ```toml
 # wrangler.toml
+
+# AI binding (REQUIRED)
 [[ai]]
 binding = "AI"
+
+# Durable Object binding (REQUIRED)
+[[durable_objects.bindings]]
+name = "DITTO_JOB"
+class_name = "DittoJob"
 ```
 
 Or in `wrangler.jsonc`:
@@ -76,11 +87,33 @@ Or in `wrangler.jsonc`:
 {
   "ai": {
     "binding": "AI"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "DITTO_JOB",
+        "class_name": "DittoJob"
+      }
+    ]
   }
 }
 ```
 
-Note: If using Alchemy, you may need to add this manually to the generated wrangler config.
+**Using Alchemy?** Configure in your `alchemy.run.ts`:
+```ts
+import { Ai, DurableObjectNamespace } from "alchemy/cloudflare";
+import { DittoJob } from "./worker/index.ts";
+
+const DITTO_JOB = DurableObjectNamespace("ditto-job", {
+  className: "DittoJob",
+  scriptName: "your-worker",
+});
+
+bindings: {
+  DITTO_JOB,
+  AI: Ai(),
+}
+```
 
 ## Error Handling
 
@@ -106,7 +139,7 @@ try {
 
 ## Architecture
 
-Ditto orchestrates parallel LLM calls across Cloudflare's edge:
+Ditto orchestrates parallel LLM calls using Durable Objects and Effect:
 
 ```
 Client → Worker (/llm) → Durable Object Job
@@ -115,20 +148,22 @@ Client → Worker (/llm) → Durable Object Job
                            ↓
         ┌─────────────────┬──────────────────┬─────────────────┐
         ↓                 ↓                  ↓                 ↓
-    Model 1          Model 2            Model 3          Model N
- (llama-3.1)     (mistral-7b)       (qwen-14b)        (custom)
-    (via AI)         (via AI)          (via AI)      (via Loaders)
+    AI.run()          AI.run()           AI.run()          AI.run()
+  (llama-3.1)      (mistral-7b)        (qwen-14b)         (custom)
         ↓                 ↓                  ↓                 ↓
         └─────────────────┴──────────────────┴─────────────────┘
                            ↓
                    Consensus Merge
                            ↓
-                    Response + Metadata
+                    Response + Timings
 ```
 
-**Concurrency**: Durable Objects handle unlimited parallel model calls within a single request.
+**Durability**: Each job runs in a Durable Object with:
+- Persistent job state for idempotency
+- Per-model result tracking
+- Automatic retry and timeout handling
 
-**Scale**: For production, connect a `MODEL_RUNNER` service binding pointing to Worker Loaders or Containers. Ditto will automatically use this instead of the AI binding for true horizontal scaling.
+**Concurrency**: Effect.all with unbounded concurrency enables true parallel execution. All model calls execute simultaneously at the edge.
 
 ## Strategies
 

@@ -5,7 +5,7 @@
     type TextGenerationModel,
   } from "$lib/cloudflare-models";
   import { runDitto } from "./data.remote";
-  import type { MergedStructuredResult } from "ditto-ai";
+  import type { MergedStructuredResult, DittoTimings } from "ditto-ai";
   import Card from "$lib/components/Card.svelte";
   import BG from "$lib/components/BG.svelte";
   import Nav from "$lib/components/Nav.svelte";
@@ -88,6 +88,7 @@ const result = await ditto({
   let mergedResult = $state<string | null>(null);
   let modelResponses = $state<Record<string, string>>({});
   let structuredResult = $state<MergedStructuredResult | null>(null);
+  let timings = $state<DittoTimings | null>(null);
   let runError = $state<string | null>(null);
   const strategyOptions = [
     { value: "consensus", label: "Consensus", disabled: false },
@@ -125,6 +126,7 @@ const result = await ditto({
     mergedResult = null;
     structuredResult = null;
     modelResponses = {};
+    timings = null;
 
     try {
       const response = await runDitto({
@@ -136,6 +138,7 @@ const result = await ditto({
       mergedResult = response.result;
       modelResponses = response.responses || {};
       structuredResult = response.structured || null;
+      timings = response.timings || null;
     } catch (err) {
       runError = (err as Error).message || "Run failed";
     } finally {
@@ -376,6 +379,49 @@ const result = await ditto({
 
           <div class="rounded-2xl border border-[#1f1f1f] bg-black/50 p-5">
             <h4 class="text-sm uppercase tracking-[0.3em] text-gray-500">
+              Performance Timings
+            </h4>
+            {#if timings}
+              <div class="mt-3 space-y-2 text-sm text-gray-200">
+                <div
+                  class="flex items-center justify-between border-b border-[#1f1f1f] pb-2"
+                >
+                  <span>Total Time</span>
+                  <span class="font-mono text-[#f97316]">{timings.total}ms</span
+                  >
+                </div>
+                <div
+                  class="flex items-center justify-between border-b border-[#1f1f1f] pb-2"
+                >
+                  <span>Fanout</span>
+                  <span class="font-mono text-[#f97316]"
+                    >{timings.fanout}ms</span
+                  >
+                </div>
+                <div
+                  class="flex items-center justify-between border-b border-[#1f1f1f] pb-2"
+                >
+                  <span>Slowest Model</span>
+                  <span class="font-mono text-[#f97316]"
+                    >{timings.slowest}ms</span
+                  >
+                </div>
+                <div class="flex items-center justify-between pb-2">
+                  <span>Merge</span>
+                  <span class="font-mono text-[#f97316] ml-auto"
+                    >{timings.merge}ms</span
+                  >
+                </div>
+              </div>
+            {:else}
+              <p class="mt-3 text-sm text-gray-500">
+                Timing metrics will appear after a run completes.
+              </p>
+            {/if}
+          </div>
+
+          <div class="rounded-2xl border border-[#1f1f1f] bg-black/50 p-5">
+            <h4 class="text-sm uppercase tracking-[0.3em] text-gray-500">
               Individual Model Responses
             </h4>
             {#if Object.keys(modelResponses).length > 0}
@@ -451,10 +497,20 @@ const result = await ditto({
         <div
           class="mt-8 rounded-xl border border-dashed border-[#f97316]/70 bg-[#f97316]/5 px-4 py-4 text-sm"
         >
-          <p class="font-semibold text-[#f97316]">Production Scale</p>
+          <p class="font-semibold text-[#f97316]">
+            Worker Loaders (Closed Beta)
+          </p>
           <p class="mt-2 text-xs text-gray-300">
-            Connect a <span class="font-mono">MODEL_RUNNER</span> service binding
-            to Worker Loaders or Containers for unlimited concurrency.
+            Each model call runs in its own <span class="font-mono">LOADER</span
+            >
+            isolate for true sandboxing.
+            <a
+              href="https://forms.gle/MoeDxE9wNiqdf8ri9"
+              target="_blank"
+              rel="noreferrer"
+              class="text-[#f97316] hover:underline ml-1"
+              >Sign up for beta access</a
+            >.
           </p>
         </div>
       </div>
