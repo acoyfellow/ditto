@@ -1,6 +1,6 @@
 {
   "name": "ditto-ai",
-  "version": "0.1.0",
+  "version": "0.1.7",
   "description": "Edge-native LLM orchestration for Cloudflare Workers",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,6 +25,8 @@
     }
   },
   "files": [
+    "README.md",
+    "CHANGELOG.md",
     "src",
     "dist"
   ],
@@ -45,24 +47,23 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ditto-run/ditto-ai.git"
+    "url": "git+https://github.com/acoyfellow/ditto.git"
   },
   "homepage": "https://ditto.coey.dev",
   "bugs": {
-    "url": "https://github.com/ditto-run/ditto-ai/issues"
+    "url": "https://github.com/acoyfellow/ditto/issues"
   },
   "publishConfig": {
     "access": "public"
   },
   "dependencies": {
-    "effect": "^3.0.0"
+    "effect": "^3.19.6"
   },
   "peerDependencies": {
     "zod": "^3.0.0"
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "@types/node": "^22.0.0"
+    "@types/node": "^24.10.1"
   }
 }
-
