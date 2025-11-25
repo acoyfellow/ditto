@@ -5,3 +5,36 @@
   --font-sans: "Google Sans Flex", sans-serif;
   --font-mono: "Google Sans Code", monospace;
 }
+
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Prevent horizontal page scroll - overflow-x doesn't break vertical sticky */
+body {
+  overflow-x: hidden;
+}
+
+/* Code blocks should scroll within container */
+pre {
+  overflow-x: auto;
+  word-break: normal;
+  white-space: pre;
+  max-width: 100%;
+}
+
+/* Text content should wrap */
+p, li, span {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Font mono should break long strings */
+.font-mono {
+  word-break: break-all;
+}
